@@ -1,0 +1,34 @@
+html, body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.page {
+    display: flex;
+}
+
+.sidebar {
+    background-color: #1b1f27;
+    width: 220px;
+    min-height: 100vh;
+    color: white;
+}
+
+.sidebar a {
+    color: #dfe3ea;
+}
+
+main {
+    flex: 1;
+    padding: 1rem;
+}
+
+.event-card {
+    max-width: 600px;
+}
+
+.top-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.5rem 0;
+}

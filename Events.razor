@@ -1,0 +1,45 @@
+@page "/events"
+@inject EventService EventSvc
+@inject UserSessionService Session
+
+<h1>Upcoming Events</h1>
+
+@if (!Session.IsLoggedIn)
+{
+    <div class="alert alert-info">Enter your name at the top of the page to register for events.</div>
+}
+
+@if (_events is null)
+{
+    <p><em>Loading events...</em></p>
+}
+else if (!_events.Any())
+{
+    <p>No events are scheduled right now. Check back soon!</p>
+}
+else
+{
+    @foreach (var ev in _events)
+    {
+        <EventCard Event="ev"
+                   IsRegistered="Session.IsRegisteredFor(ev.Id)"
+                   IsRegisteredChanged="@((bool isReg) => OnRegistrationChanged(ev.Id, isReg))" />
+    }
+}
+
+@code {
+    private IReadOnlyList<EventModel>? _events;
+
+    protected override void OnInitialized()
+    {
+        // Loaded once per page visit; EventService is Singleton so counts stay
+        // consistent across users/pages (performance: avoid re-fetching per card).
+        _events = EventSvc.GetEvents();
+    }
+
+    private void OnRegistrationChanged(int eventId, bool isRegistered)
+    {
+        // Keep the session's registration set in sync with each card's toggle.
+        Session.SetRegistration(eventId, isRegistered);
+    }
+}

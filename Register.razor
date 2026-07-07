@@ -1,0 +1,102 @@
+@page "/register/{EventId:int}"
+@inject EventService EventSvc
+@inject AttendanceService AttendanceSvc
+@inject UserSessionService Session
+@inject NavigationManager Nav
+
+<h1>Event Registration</h1>
+
+@if (_event is null)
+{
+    <!-- Routing error handling: an EventId that doesn't exist shows a friendly
+         message instead of a null-reference exception or blank page. -->
+    <div class="alert alert-danger">
+        <p>We couldn't find an event with ID @EventId.</p>
+        <a class="btn btn-secondary" href="/events">Back to Events</a>
+    </div>
+}
+else if (_submitted)
+{
+    <div class="alert alert-success">
+        <h4>You're all set, @_attendee.FullName!</h4>
+        <p>You're registered for <strong>@_event.Name</strong> on @_event.Date.ToString("MMMM d, yyyy").</p>
+        <a class="btn btn-primary" href="/attendance">View Attendance Tracker</a>
+    </div>
+}
+else
+{
+    <h3>@_event.Name</h3>
+    <p class="text-muted">@_event.Location &middot; @_event.Date.ToString("MMMM d, yyyy")</p>
+
+    @if (_event.IsFull)
+    {
+        <div class="alert alert-warning">Sorry, this event is at full capacity.</div>
+    }
+    else
+    {
+        <EditForm Model="_attendee" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <InputText class="form-control" @bind-Value="_attendee.FullName" />
+                <ValidationMessage For="@(() => _attendee.FullName)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText class="form-control" @bind-Value="_attendee.Email" />
+                <ValidationMessage For="@(() => _attendee.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Phone Number</label>
+                <InputText class="form-control" @bind-Value="_attendee.PhoneNumber" />
+                <ValidationMessage For="@(() => _attendee.PhoneNumber)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Number of Guests</label>
+                <InputNumber class="form-control" @bind-Value="_attendee.NumberOfGuests" />
+                <ValidationMessage For="@(() => _attendee.NumberOfGuests)" />
+            </div>
+
+            <button class="btn btn-primary" type="submit">Complete Registration</button>
+        </EditForm>
+    }
+}
+
+@code {
+    [Parameter]
+    public int EventId { get; set; }
+
+    private EventModel? _event;
+    private AttendeeModel _attendee = new();
+    private bool _submitted;
+
+    protected override void OnParametersSet()
+    {
+        _event = EventSvc.GetEventById(EventId);
+        if (_event is not null)
+        {
+            _attendee = new AttendeeModel { EventId = _event.Id };
+        }
+    }
+
+    private void HandleValidSubmit()
+    {
+        if (_event is null) return;
+
+        var registered = EventSvc.TryRegister(_event.Id);
+        if (!registered)
+        {
+            // Defensive check in case capacity filled up between page load and submit.
+            return;
+        }
+
+        AttendanceSvc.Register(_attendee);
+        Session.SetRegistration(_event.Id, true);
+        _submitted = true;
+    }
+}

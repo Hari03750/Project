@@ -1,0 +1,88 @@
+@page "/attendance"
+@inject EventService EventSvc
+@inject AttendanceService AttendanceSvc
+
+<h1>Attendance Tracker</h1>
+
+@if (!_events.Any())
+{
+    <p>No events to track yet.</p>
+}
+else
+{
+    <div class="mb-4">
+        <label class="form-label">Select an event</label>
+        <select class="form-select" @bind="_selectedEventId">
+            @foreach (var ev in _events)
+            {
+                <option value="@ev.Id">@ev.Name</option>
+            }
+        </select>
+    </div>
+
+    @{
+        var attendees = AttendanceSvc.GetAttendeesForEvent(_selectedEventId);
+    }
+
+    <p>
+        Checked in: <strong>@AttendanceSvc.GetCheckedInCount(_selectedEventId)</strong> / @attendees.Count
+    </p>
+
+    @if (!attendees.Any())
+    {
+        <p><em>No one has registered for this event yet.</em></p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Guests</th>
+                    <th>Checked In</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var attendee in attendees)
+                {
+                    <tr>
+                        <td>@attendee.FullName</td>
+                        <td>@attendee.Email</td>
+                        <td>@attendee.NumberOfGuests</td>
+                        <td>
+                            @if (attendee.HasCheckedIn)
+                            {
+                                <span class="badge bg-success">Checked in</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Not yet</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => AttendanceSvc.ToggleCheckIn(attendee.Id)">
+                                Toggle
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private IReadOnlyList<EventModel> _events = Array.Empty<EventModel>();
+    private int _selectedEventId;
+
+    protected override void OnInitialized()
+    {
+        _events = EventSvc.GetEvents();
+        if (_events.Any())
+        {
+            _selectedEventId = _events[0].Id;
+        }
+    }
+}
