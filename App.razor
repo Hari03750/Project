@@ -1,0 +1,16 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Shared.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <!-- Handles invalid/unknown routes gracefully instead of a blank screen or crash -->
+        <LayoutView Layout="@typeof(Shared.MainLayout)">
+            <div class="alert alert-warning m-4">
+                <h3>Page not found</h3>
+                <p>Sorry, we couldn't find that page. It may have been moved, or the link/URL may be incorrect.</p>
+                <a class="btn btn-primary" href="/">Go back home</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

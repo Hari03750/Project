@@ -1,0 +1,39 @@
+@inject UserSessionService Session
+@implements IDisposable
+
+@if (Session.IsLoggedIn)
+{
+    <span>Signed in as <strong>@Session.UserName</strong></span>
+    <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="Logout">Log out</button>
+}
+else
+{
+    <input class="form-control form-control-sm d-inline-block w-auto" placeholder="Your name" @bind="_nameInput" @bind:event="oninput" />
+    <button class="btn btn-sm btn-primary ms-2" @onclick="Login" disabled="@string.IsNullOrWhiteSpace(_nameInput)">Log in</button>
+}
+
+@code {
+    private string _nameInput = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Re-render this badge whenever session state changes elsewhere in the app.
+        Session.OnChange += StateHasChanged;
+    }
+
+    private void Login()
+    {
+        Session.Login(_nameInput.Trim());
+    }
+
+    private void Logout()
+    {
+        Session.Logout();
+        _nameInput = string.Empty;
+    }
+
+    public void Dispose()
+    {
+        Session.OnChange -= StateHasChanged;
+    }
+}

@@ -1,0 +1,63 @@
+<div class="card event-card mb-3 shadow-sm">
+    <div class="card-body">
+        <h3 class="card-title">@Event.Name</h3>
+        <p class="card-text">@Event.Description</p>
+
+        <ul class="list-unstyled mb-2">
+            <li><strong>Date:</strong> @Event.Date.ToString("dddd, MMMM d, yyyy")</li>
+            <li><strong>Location:</strong> @Event.Location</li>
+            <li><strong>Attendance:</strong> @Event.RegisteredCount / @Event.Capacity</li>
+        </ul>
+
+        @if (Event.IsFull && !IsRegistered)
+        {
+            <span class="badge bg-danger mb-2">Event Full</span>
+        }
+
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="register-@Event.Id"
+                   checked="@IsRegistered"
+                   disabled="@(Event.IsFull && !IsRegistered)"
+                   @onchange="OnToggleRegistration" />
+            <label class="form-check-label" for="register-@Event.Id">
+                @(IsRegistered ? "You're registered" : "Register for this event")
+            </label>
+        </div>
+
+        <a class="btn btn-link px-0" href="@($"register/{Event.Id}")">Fill out full registration form</a>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public EventModel Event { get; set; } = default!;
+
+    // Two-way bindable: parent can use @bind-IsRegistered="someBool"
+    [Parameter]
+    public bool IsRegistered { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsRegisteredChanged { get; set; }
+
+    // Lets the parent know the underlying Event object's counts changed too.
+    [Parameter]
+    public EventCallback<EventModel> EventChanged { get; set; }
+
+    private async Task OnToggleRegistration(ChangeEventArgs e)
+    {
+        var newValue = (bool)(e.Value ?? false);
+
+        // Guard against double-registering into a full event (input validation).
+        if (newValue && Event.IsFull)
+        {
+            return;
+        }
+
+        IsRegistered = newValue;
+        Event.RegisteredCount += newValue ? 1 : -1;
+        Event.RegisteredCount = Math.Max(0, Event.RegisteredCount);
+
+        await IsRegisteredChanged.InvokeAsync(IsRegistered);
+        await EventChanged.InvokeAsync(Event);
+    }
+}
